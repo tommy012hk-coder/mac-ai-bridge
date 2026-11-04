@@ -95,6 +95,20 @@ func currentText(bundleID: String) async throws -> [String] {
     return try recognizeText(image)
 }
 
+func waitForPermission(_ permission: () -> Bool, request: () -> Bool) async -> Bool {
+    if permission() {
+        return true
+    }
+    _ = request()
+    for _ in 0..<30 {
+        try? await Task.sleep(for: .seconds(1))
+        if permission() {
+            return true
+        }
+    }
+    return false
+}
+
 func run() async throws {
     let args = CommandLine.arguments
     guard args.count == 6 else {
@@ -106,12 +120,16 @@ func run() async throws {
     let prompt = args[4]
     let timeout = TimeInterval(args[5]) ?? 180
 
-    guard CGPreflightPostEventAccess() else {
-        _ = CGRequestPostEventAccess()
+    guard await waitForPermission(
+        { CGPreflightPostEventAccess() },
+        request: { CGRequestPostEventAccess() }
+    ) else {
         throw BridgeFailure(description: "macOS blocked keyboard/mouse control. Enable Accessibility for the app running this command in System Settings > Privacy & Security > Accessibility.")
     }
-    guard CGPreflightScreenCaptureAccess() else {
-        _ = CGRequestScreenCaptureAccess()
+    guard await waitForPermission(
+        { CGPreflightScreenCaptureAccess() },
+        request: { CGRequestScreenCaptureAccess() }
+    ) else {
         throw BridgeFailure(description: "macOS blocked reading the app window. Enable Screen Recording for the app running this command in System Settings > Privacy & Security > Screen Recording.")
     }
 

@@ -50,7 +50,7 @@ class BridgeError(RuntimeError):
 
 
 def ask(app_name: str, prompt: str) -> str:
-    """Submit a prompt to an allowlisted app and read its visible reply."""
+    """Submit a prompt and read its visible reply without requiring AX text fields."""
     if app_name not in APPS:
         raise BridgeError(f"Unsupported app: {app_name}")
     if not isinstance(prompt, str) or not prompt.strip():

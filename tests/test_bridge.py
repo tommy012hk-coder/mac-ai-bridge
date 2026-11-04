@@ -15,16 +15,17 @@ class AutomationTests(unittest.TestCase):
     @patch("mac_ai_bridge.automation.Path.is_file", return_value=True)
     @patch("mac_ai_bridge.automation.Path.is_dir", return_value=True)
     @patch("mac_ai_bridge.automation.subprocess.run")
-    def test_ask_opens_allowlisted_app_and_returns_reply(self, run, _is_dir, _is_file):
+    def test_ask_uses_keyboard_helper_and_returns_reply(self, run, _is_dir, _is_file):
         run.side_effect = [
             None,
             type("Completed", (), {"stdout": "A reply\n", "stderr": ""})(),
         ]
         self.assertEqual(ask("gemini", "Hello"), "A reply")
         self.assertEqual(run.call_count, 2)
-        self.assertIn("swift", run.call_args.args[0][0])
-        self.assertIn("com.google.GeminiMacOS", run.call_args.args[0])
-        self.assertIn("Hello", run.call_args.args[0])
+        command = run.call_args.args[0]
+        self.assertIn("swift", command[0])
+        self.assertIn("com.google.GeminiMacOS", command)
+        self.assertIn("Hello", command)
 
     def test_rejects_unknown_app_before_launching(self):
         with self.assertRaisesRegex(BridgeError, "Unsupported app"):
@@ -93,7 +94,7 @@ class HttpTests(unittest.TestCase):
             data = json.loads(response.read())
         self.assertEqual(data["apps"], ["copilot", "gemini", "vscode"])
 
-    @patch("mac_ai_bridge.server.ask", side_effect=BridgeError("Accessibility permission is required"))
+    @patch("mac_ai_bridge.server.ask", side_effect=BridgeError("Screen Recording permission is required"))
     def test_post_ask_reports_ui_permission_errors(self, _ask_mock):
         body = json.dumps({"app": "vscode", "prompt": "Hello"}).encode()
         request = Request(
@@ -107,7 +108,7 @@ class HttpTests(unittest.TestCase):
         self.assertEqual(raised.exception.code, 502)
         self.assertEqual(
             json.loads(raised.exception.read()),
-            {"error": "Accessibility permission is required"},
+            {"error": "Screen Recording permission is required"},
         )
 
 
