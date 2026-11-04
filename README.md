@@ -2,8 +2,8 @@
 
 Send a prompt to an AI app already signed in on your Mac and read the reply
 through its visible interface. This project uses Python's standard library and
-macOS Accessibility/AppleScript UI automation; it does not use AI provider APIs
-or require API keys. Gemini is GUI/AppleScript-only.
+native macOS UI automation; it does not use AI provider APIs or require API
+keys. Gemini is GUI-only.
 
 Supported targets:
 
@@ -15,18 +15,22 @@ Supported targets:
 
 ## Requirements and permissions
 
-- macOS with Python 3.9+ and the target app installed and signed in.
-- Enable **System Settings → Privacy & Security → Accessibility** for the
-  terminal or Python process running the bridge. macOS may also ask permission
-  to control the app.
+- macOS 14+ with Python 3.9+ and the target app installed and signed in.
+- Enable **System Settings → Privacy & Security → Accessibility** and
+  **Screen Recording** for the terminal or app running the bridge. These are
+  needed to send keyboard/mouse events and read the target app's visible window.
+- The first `ask` compiles/runs a small Swift helper using macOS ScreenCaptureKit
+  and Vision; Xcode Command Line Tools (including `swift`) must be installed.
 - In VS Code, have a workspace open and GitHub Copilot Chat available. The
   bridge opens Chat with VS Code's `Control+Command+I` shortcut.
 
-The bridge activates the app, sends the prompt through an accessible text
-input, and reads newly visible accessibility text from the front window. The
-apps can change their UI, so an input/reply that is not exposed accessibly will
-produce an explicit error. The bridge does not bypass sign-in, subscriptions,
-or app access controls.
+The bridge activates the app, focuses the chat composer (the VS Code shortcut,
+or a click near the bottom of the Copilot/Gemini window), pastes the prompt,
+and presses Return. It reads the resulting visible window using on-device OCR.
+This avoids depending on AXTextField/AXTextArea, which these Electron/WebView
+apps may not expose. App layout changes, hidden windows, denied macOS
+permissions, or replies outside the visible window produce an explicit error.
+The bridge does not bypass sign-in, subscriptions, or app access controls.
 
 ## CLI
 
